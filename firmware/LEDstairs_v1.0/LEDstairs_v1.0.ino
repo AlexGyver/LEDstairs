@@ -1,34 +1,35 @@
-#define STEP_AMOUNT 16    // количество ступенек
-#define STEP_LENGTH 16    // количество светодиодов (или чипов WS2811) на ступеньку
+#define STEP_AMOUNT 8     // количество ступенек
+#define STEP_LENGTH 17    // количество чипов WS2811 на ступеньку
 
 #define AUTO_BRIGHT 0     // автояркость 0/1 вкл/выкл (с фоторезистором)
-#define CUSTOM_BRIGHT 30  // ручная яркость
+#define CUSTOM_BRIGHT 40  // ручная яркость
 
-#define START_EFFECT RAINBOW  // режим при старте COLOR, STRIPES, RAINBOW, FIRE
-#define ROTATE_EFFECTS 1      // 0/1 - автосмена эффектов
-#define TIMEOUT 5             // секунд, таймаут выключения ступенек, если не сработал конечный датчик
+#define FADR_SPEED 500
+#define START_EFFECT RAINBOW    // режим при старте COLOR, RAINBOW, FIRE
+#define ROTATE_EFFECTS 0      // 0/1 - автосмена эффектов
+#define TIMEOUT 15            // секунд, таймаут выключения ступенек, если не сработал конечный датчик
 
 // пины
 // если перепутаны сенсоры - можно поменять их местами в коде! Вот тут
-#define SENSOR_START 2
-#define SENSOR_END 3
+#define SENSOR_START 3
+#define SENSOR_END 2
 #define STRIP_PIN 12    // пин ленты
+#define PHOTO_PIN A0
 
 // для разработчиков
-#define ORDER_GRB       // порядок цветов ORDER_GRB / ORDER_RGB / ORDER_BRG
+#define ORDER_BGR       // порядок цветов ORDER_GRB / ORDER_RGB / ORDER_BRG
 #define COLOR_DEBTH 2   // цветовая глубина: 1, 2, 3 (в байтах)
 #include <microLED.h>
 #define NUMLEDS STEP_AMOUNT * STEP_LENGTH // кол-во светодиодов
-
 LEDdata leds[NUMLEDS];  // буфер ленты
-//microLED strip(leds, NUMLEDS, STRIP_PIN);  // лента
 microLED strip(leds, STRIP_PIN, STEP_LENGTH, STEP_AMOUNT, ZIGZAG, LEFT_BOTTOM, DIR_RIGHT);  // объект матрица
+
 int effSpeed;
 int8_t effDir;
 byte curBright = CUSTOM_BRIGHT;
 enum {S_IDLE, S_WORK} systemState = S_IDLE;
-enum {COLOR, STRIPES, RAINBOW, FIRE} curEffect = START_EFFECT;
-#define EFFECTS_AMOUNT 4
+enum {COLOR, RAINBOW, FIRE} curEffect = START_EFFECT;
+#define EFFECTS_AMOUNT 3
 byte effectCounter;
 
 // ==== удобные макросы ====
@@ -49,11 +50,13 @@ CRGBPalette16 firePalette;
 
 void setup() {
   Serial.begin(9600);
+  //FastLED.addLeds<WS2811, STRIP_PIN, GRB>(leds, NUMLEDS).setCorrection( TypicalLEDStrip );
   strip.setBrightness(curBright);    // яркость (0-255)
   strip.clear();
   strip.show();
-  pinMode(SENSOR_START, INPUT_PULLUP);
-  pinMode(SENSOR_END, INPUT_PULLUP);
+  // для кнопок
+  //pinMode(SENSOR_START, INPUT_PULLUP);
+  //pinMode(SENSOR_END, INPUT_PULLUP);
   firePalette = CRGBPalette16(
                   getFireColor(0 * 16),
                   getFireColor(1 * 16),
@@ -72,6 +75,9 @@ void setup() {
                   getFireColor(14 * 16),
                   getFireColor(15 * 16)
                 );
+  delay(100);
+  strip.clear();
+  strip.show();
 }
 
 void loop() {
@@ -84,7 +90,8 @@ void getBright() {
 #if (AUTO_BRIGHT == 1)
   if (systemState == S_IDLE) {  // в режиме простоя
     EVERY_MS(3000) {            // каждые 3 сек
-      curBright = map(analogRead(PHOTO_PIN), 0, 1023, 5, 255);
+      Serial.println(analogRead(PHOTO_PIN));
+      curBright = map(analogRead(PHOTO_PIN), 30, 800, 10, 200);
       strip.setBrightness(curBright);
     }
   }
@@ -94,10 +101,12 @@ void getBright() {
 // крутилка эффектов в режиме активной работы
 void effectFlow() {
   if (systemState == S_WORK) {
-    EVERY_MS(effSpeed) {
+    static uint32_t tmr;
+    if (millis() - tmr >= effSpeed) {
+      tmr = millis();
+      //EVERY_MS(effSpeed) {
       switch (curEffect) {
         case COLOR: staticColor(effDir, 0, STEP_AMOUNT); break;
-        case STRIPES: colorStripes(effDir, 0, STEP_AMOUNT); break;
         case RAINBOW: rainbowStripes(-effDir, 0, STEP_AMOUNT); break; // rainbowStripes - приёмный
         case FIRE: fireStairs(effDir, 0, 0); break;
       }
@@ -117,7 +126,7 @@ void readSensors() {
     int changeBright = curBright;
     while (1) {
       EVERY_MS(50) {
-        changeBright -= 1;
+        changeBright -= 5;
         if (changeBright < 0) break;
         strip.setBrightness(changeBright);
         strip.show();
@@ -127,11 +136,10 @@ void readSensors() {
     strip.setBrightness(curBright);
     strip.show();
   }
-  
-  EVERY_MS(50) {
 
+  EVERY_MS(50) {
     // СЕНСОР У НАЧАЛА ЛЕСТНИЦЫ
-    if (!digitalRead(SENSOR_START)) {
+    if (digitalRead(SENSOR_START)) {
       if (!flag1) {
         flag1 = true;
         timeoutCounter = millis();
@@ -147,7 +155,7 @@ void readSensors() {
           case S_WORK:
             if (effDir == -1) {
               stepFader(1, 1); systemState = S_IDLE;
-              strip.clear(); strip.show();
+              strip.clear(); strip.show(); return;
             } break;
         }
       }
@@ -156,7 +164,7 @@ void readSensors() {
     }
 
     // СЕНСОР У КОНЦА ЛЕСТНИЦЫ
-    if (!digitalRead(SENSOR_END)) {
+    if (digitalRead(SENSOR_END)) {
       if (!flag2) {
         flag2 = true;
         timeoutCounter = millis();
@@ -172,7 +180,7 @@ void readSensors() {
           case S_WORK:
             if (effDir == 1) {
               stepFader(0, 1); systemState = S_IDLE;
-              strip.clear(); strip.show();
+              strip.clear(); strip.show(); return;
             } break;
         }
       }

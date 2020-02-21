@@ -9,7 +9,7 @@ void stepFader(bool dir, bool state) {
   byte mode = state | (dir << 1);
   byte counter = 0;
   while (1) {
-    EVERY_MS(60) {
+    EVERY_MS(FADR_SPEED) {
       counter++;
       switch (curEffect) {
         case COLOR:
@@ -18,14 +18,6 @@ void stepFader(bool dir, bool state) {
             case 1: staticColor(1, counter, STEP_AMOUNT); break;
             case 2: staticColor(-1, STEP_AMOUNT - counter, STEP_AMOUNT); break;
             case 3: staticColor(-1, 0, STEP_AMOUNT - counter); break;
-          }
-          break;
-        case STRIPES:
-          switch (mode) {
-            case 0: colorStripes(1, 0, counter); break;
-            case 1: colorStripes(1, counter, STEP_AMOUNT); break;
-            case 2: colorStripes(-1, STEP_AMOUNT - counter, STEP_AMOUNT); break;
-            case 3: colorStripes(-1, 0, STEP_AMOUNT - counter); break;
           }
           break;
         case RAINBOW:
@@ -41,7 +33,7 @@ void stepFader(bool dir, bool state) {
             int changeBright = curBright;
             while (1) {
               EVERY_MS(50) {
-                changeBright -= 1;
+                changeBright -= 5;
                 if (changeBright < 0) break;
                 strip.setBrightness(changeBright);
                 fireStairs(0, 0, 0);
@@ -56,7 +48,7 @@ void stepFader(bool dir, bool state) {
             strip.setBrightness(0);
             while (1) {
               EVERY_MS(50) {
-                changeBright += 1;
+                changeBright += 5;
                 if (changeBright > curBright) break;
                 strip.setBrightness(changeBright);
                 fireStairs(0, 0, 0);
@@ -72,15 +64,19 @@ void stepFader(bool dir, bool state) {
       if (counter == STEP_AMOUNT) break;
     }
   }
+  if (state == 1) {
+    strip.clear();
+    strip.show();
+  }
 }
 
 // ============== ЭФФЕКТЫ =============
 // ========= огонь
 // настройки пламени
-#define HUE_GAP 50      // заброс по hue
+#define HUE_GAP 45      // заброс по hue
 #define FIRE_STEP 90    // шаг изменения "языков" пламени
 #define HUE_START 2     // начальный цвет огня (0 красный, 80 зелёный, 140 молния, 190 розовый)
-#define MIN_BRIGHT 40   // мин. яркость огня
+#define MIN_BRIGHT 150  // мин. яркость огня
 #define MAX_BRIGHT 255  // макс. яркость огня
 #define MIN_SAT 220     // мин. насыщенность
 #define MAX_SAT 255     // макс. насыщенность
@@ -120,37 +116,20 @@ void staticColor(int8_t dir, byte from, byte to) {
   colorCounter += 2;
   FOR_i(0, STEP_AMOUNT) {
     thisBright = 255;
-    if (i < from || i > to) thisBright = 0;
+    if (i < from || i >= to) thisBright = 0;
     fillStep(i, mHSV(colorCounter, 255, thisBright));
-  }
-}
-
-// ========= полоски со сменой цвета
-void colorStripes(int8_t dir, byte from, byte to) {
-  effSpeed = 100;
-  static int8_t counter = 0;
-  static byte colorCounter = 0;
-  colorCounter += 5;
-  if (++counter >= 3) counter = 0;
-  byte thisBright;
-  strip.clear();
-  FOR_i(0, STEP_AMOUNT) {
-    thisBright = 255;
-    int8_t thisI = i + counter * dir;
-    if (thisI < from || thisI > to) thisBright = 0;
-    if (i % 3 == 0) fillStep(thisI, mHSV(colorCounter, 255, thisBright));
   }
 }
 
 // ========= полоски радужные
 void rainbowStripes(int8_t dir, byte from, byte to) {
-  effSpeed = 30;
+  effSpeed = 40;
   static byte colorCounter = 0;
   colorCounter += 2;
   byte thisBright;
   FOR_i(0, STEP_AMOUNT) {
     thisBright = 255;
-    if (i < from || i > to) thisBright = 0;
+    if (i < from || i >= to) thisBright = 0;
     fillStep((dir > 0) ? (i) : (STEP_AMOUNT - 1 - i), mHSV(colorCounter + (float)i * 255 / STEP_AMOUNT, 255, thisBright));
   }
 }
