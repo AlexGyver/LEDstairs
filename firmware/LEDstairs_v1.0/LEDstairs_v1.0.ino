@@ -1,3 +1,12 @@
+/*
+  Скетч к проекту "Подсветка лестницы"
+  Страница проекта (схемы, описания): https://alexgyver.ru/ledstairs/
+  Исходники на GitHub: https://github.com/AlexGyver/LEDstairs
+  Нравится, как написан код? Поддержи автора! https://alexgyver.ru/support_alex/
+  Автор: AlexGyver Technologies, 2019
+  https://AlexGyver.ru/
+*/
+
 #define STEP_AMOUNT 8     // количество ступенек
 #define STEP_LENGTH 17    // количество чипов WS2811 на ступеньку
 
