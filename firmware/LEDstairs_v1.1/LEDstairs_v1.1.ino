@@ -17,19 +17,19 @@
   https://AlexGyver.ru/
 */
 
-#define STEP_AMOUNT 18     // количество ступенек
-#define STEP_LENGTH 15    // количество чипов WS2811 на ступеньку
+#define STEP_AMOUNT 5     // количество ступенек
+#define STEP_LENGTH 16    // количество чипов WS2811 на ступеньку
 
 #define AUTO_BRIGHT 1     // автояркость 0/1 вкл/выкл (с фоторезистором)
-#define CUSTOM_BRIGHT 40  // ручная яркость
+#define CUSTOM_BRIGHT 100  // ручная яркость
 
 #define FADR_SPEED 500
 #define START_EFFECT RAINBOW    // режим при старте COLOR, RAINBOW, FIRE
 #define ROTATE_EFFECTS 1      // 0/1 - автосмена эффектов
 #define TIMEOUT 15            // секунд, таймаут выключения ступенек, если не сработал конечный датчик
 
-#define NIGHT_LIGHT_BIT_MASK 0b1000000100000001  // последовательность диодов в ночном режиме
-#define NIGHT_LIGHT_COLOR 50  // 0 - 255
+#define NIGHT_LIGHT_BIT_MASK 0b10101010101010101010101010101010  // последовательность диодов в ночном режиме
+#define NIGHT_LIGHT_COLOR 100  // 0 - 255
 #define NIGHT_LIGHT_BRIGHT 50  // 0 - 255
 #define NIGHT_PHOTO_MAX 500   // максимальное значение фоторезистора для отключения подсветки
 
@@ -149,10 +149,11 @@ void nightLight() {
     return;
   }
   EVERY_MS(15000) {
-    // каждые 15 секунд сдвигаем маску на один бит, чтобы диоды не сильно грелись и не выгорали
-    nightLightBitMask =  (nightLightBitMask >> 1) | (nightLightBitMask << (STEP_LENGTH - 1));
+    // каждые 15 секунд инвертируем маску, чтобы диоды не выгорали
+    nightLightBitMask = ~nightLightBitMask;
     Serial.print("Night light bit mask ");
     Serial.println(nightLightBitMask, BIN);
+    animatedSwitchOff();
     strip.clear();
     strip.setBrightness(NIGHT_LIGHT_BRIGHT);
     fillStepWithBitMask(0, mHSV(NIGHT_LIGHT_COLOR, 255, NIGHT_LIGHT_BRIGHT), nightLightBitMask);
@@ -162,10 +163,10 @@ void nightLight() {
   }
 }
 
-void fillStepWithBitMask(int8_t num, LEDdata color, int8_t bitMask) {
+void fillStepWithBitMask(int8_t num, LEDdata color, uint32_t bitMask) {
   if (num >= STEP_AMOUNT || num < 0) return;
   FOR_i(num * STEP_LENGTH, num * STEP_LENGTH + STEP_LENGTH) {
-    if (bitRead(i % STEP_LENGTH, bitMask)) {
+    if (bitRead(bitMask, i % STEP_LENGTH)) {
       leds[i] = color;
     }
   }
@@ -175,17 +176,21 @@ void handleTimeout() {
   if (millis() - timeoutCounter >= (TIMEOUT * 1000L)) {
     Serial.println("Timeout!");
     systemIdleState = true;
+    animatedSwitchOff();
+    strip.clear();
+    strip.setBrightness(curBright);
+    strip.show();
+  }
+}
+
+void animatedSwitchOff() {
     int changeBright = curBright;
     do {
       delay(50);
       strip.setBrightness(changeBright);
       strip.show();
       changeBright -= 5;
-    } while (changeBright > 0);
-    strip.clear();
-    strip.setBrightness(curBright);
-    strip.show();
-  }
+    } while (changeBright > 0);  
 }
 
 void handlePirSensor(PirSensor *sensor) {
