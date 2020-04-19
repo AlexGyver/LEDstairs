@@ -2,9 +2,11 @@
   Новые функции в прошивке 1.1
   1) поддержка ночного режима. Подсвечиваются крайние ступеньки.
   Настройка:
-  - маска (какие диоды на ленте включать) NIGHT_LIGHT_BIT_MASK,
+  - маска (какие диоды на ленте включать) NIGHT_LIGHT_BIT_MASK
   - цвет NIGHT_LIGHT_COLOR
   - яркость NIGHT_LIGHT_BRIGHT
+  - максимальное значение фоторезистора NIGHT_PHOTO_MAX для отключения подсветки
+  
   Автор: Геннадий Дегтерёв, 2020
   https://degterjow.de/
   gennadij@degterjow.de
@@ -23,7 +25,7 @@
 #define AUTO_BRIGHT 1     // автояркость 0/1 вкл/выкл (с фоторезистором)
 #define CUSTOM_BRIGHT 100  // ручная яркость
 
-#define FADR_SPEED 500
+#define FADR_SPEED 500          // скорость переключения с одной ступеньки на другую
 #define START_EFFECT RAINBOW    // режим при старте COLOR, RAINBOW, FIRE
 #define ROTATE_EFFECTS 1      // 0/1 - автосмена эффектов
 #define TIMEOUT 15            // секунд, таймаут выключения ступенек, если не сработал конечный датчик
@@ -115,7 +117,7 @@ void loop() {
   handlePirSensor(&endPirSensor);
   if (systemIdleState || systemOffState) {
     handlePhotoResistor();
-    nightLight();
+    handleNightLight();
     delay(50);
   } else {
     effectFlow();
@@ -142,55 +144,36 @@ void handlePhotoResistor() {
 #endif
 }
 
+void handleNightLight() {
+  EVERY_MS(60000) {
+    nightLight();
+  }
+}
+
 void nightLight() {
   if (systemOffState) {
     strip.clear();
     strip.show();
     return;
   }
-  EVERY_MS(15000) {
-    // каждые 15 секунд инвертируем маску, чтобы диоды не выгорали
-    nightLightBitMask = ~nightLightBitMask;
-    Serial.print("Night light bit mask ");
-    Serial.println(nightLightBitMask, BIN);
-    animatedSwitchOff();
-    strip.clear();
-    strip.setBrightness(NIGHT_LIGHT_BRIGHT);
-    fillStepWithBitMask(0, mHSV(NIGHT_LIGHT_COLOR, 255, NIGHT_LIGHT_BRIGHT), nightLightBitMask);
-    fillStepWithBitMask(STEP_AMOUNT - 1, mHSV(NIGHT_LIGHT_COLOR, 255, NIGHT_LIGHT_BRIGHT), nightLightBitMask);
-    strip.show();
-    strip.setBrightness(curBright);
-  }
-}
-
-void fillStepWithBitMask(int8_t num, LEDdata color, uint32_t bitMask) {
-  if (num >= STEP_AMOUNT || num < 0) return;
-  FOR_i(num * STEP_LENGTH, num * STEP_LENGTH + STEP_LENGTH) {
-    if (bitRead(bitMask, i % STEP_LENGTH)) {
-      leds[i] = color;
-    }
-  }
+  // инвертируем маску, чтобы диоды не выгорали
+  nightLightBitMask = ~nightLightBitMask;
+  Serial.print("Night light bit mask ");
+  Serial.println(nightLightBitMask, BIN);
+  animatedSwitchOff(NIGHT_LIGHT_BRIGHT);
+  strip.clear();
+  fillStepWithBitMask(0, mHSV(NIGHT_LIGHT_COLOR, 255, NIGHT_LIGHT_BRIGHT), nightLightBitMask);
+  fillStepWithBitMask(STEP_AMOUNT - 1, mHSV(NIGHT_LIGHT_COLOR, 255, NIGHT_LIGHT_BRIGHT), nightLightBitMask);
+  animatedSwitchOn(NIGHT_LIGHT_BRIGHT);
 }
 
 void handleTimeout() {
   if (millis() - timeoutCounter >= (TIMEOUT * 1000L)) {
     Serial.println("Timeout!");
     systemIdleState = true;
-    animatedSwitchOff();
-    strip.clear();
-    strip.setBrightness(curBright);
-    strip.show();
+    animatedSwitchOff(curBright);
+    nightLight();
   }
-}
-
-void animatedSwitchOff() {
-    int changeBright = curBright;
-    do {
-      delay(50);
-      strip.setBrightness(changeBright);
-      strip.show();
-      changeBright -= 5;
-    } while (changeBright > 0);  
 }
 
 void handlePirSensor(PirSensor *sensor) {
@@ -212,8 +195,7 @@ void handlePirSensor(PirSensor *sensor) {
       } else {
         stepFader(1, 1);
       }
-      strip.clear();
-      strip.show();
+      nightLight();
     }
     systemIdleState = !systemIdleState;
   }

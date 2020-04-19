@@ -141,3 +141,32 @@ void fillStep(int8_t num, LEDdata color) {
     leds[i] = color;
   }
 }
+
+void fillStepWithBitMask(int8_t num, LEDdata color, uint32_t bitMask) {
+  if (num >= STEP_AMOUNT || num < 0) return;
+  FOR_i(num * STEP_LENGTH, num * STEP_LENGTH + STEP_LENGTH) {
+    if (bitRead(bitMask, i % STEP_LENGTH)) {
+      leds[i] = color;
+    }
+  }
+}
+
+void animatedSwitchOff(int bright) {
+  int changeBright = bright;
+  do {
+    delay(50);
+    strip.setBrightness(changeBright);
+    strip.show();
+    changeBright -= 5;
+  } while (changeBright > 0);
+}
+
+void animatedSwitchOn(int bright) {
+  int changeBright = 0;
+  do {
+    delay(50);
+    strip.setBrightness(changeBright);
+    strip.show();
+    changeBright += 5;
+  } while (changeBright < bright);
+}
