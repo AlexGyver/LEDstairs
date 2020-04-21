@@ -25,8 +25,8 @@
 #define AUTO_BRIGHT 1     // автояркость 0/1 вкл/выкл (с фоторезистором)
 #define CUSTOM_BRIGHT 100  // ручная яркость
 
-#define FADR_SPEED 500          // скорость переключения с одной ступеньки на другую
-#define START_EFFECT RAINBOW    // режим при старте COLOR, RAINBOW, FIRE
+#define FADR_SPEED 300         // скорость переключения с одной ступеньки на другую
+#define START_EFFECT RAINBOW   // режим при старте COLOR, RAINBOW, FIRE
 #define ROTATE_EFFECTS 1      // 0/1 - автосмена эффектов
 #define TIMEOUT 15            // секунд, таймаут выключения ступенек, если не сработал конечный датчик
 
@@ -169,10 +169,14 @@ void nightLight() {
 
 void handleTimeout() {
   if (millis() - timeoutCounter >= (TIMEOUT * 1000L)) {
-    Serial.println("Timeout!");
+    Serial.println("Timeout");
     systemIdleState = true;
-    animatedSwitchOff(curBright);
-    nightLight();
+      if (effectDirection == 1) {
+          stepFader(0, 1);
+      } else {
+          stepFader(1, 1);
+      }
+      nightLight();
   }
 }
 
@@ -180,24 +184,15 @@ void handlePirSensor(PirSensor *sensor) {
   if (systemOffState) return;
 
   int newState = digitalRead(sensor->pin);
-  if (newState && !sensor->lastState) {
+  if (systemIdleState && newState && !sensor->lastState) {
     timeoutCounter = millis();
-    Serial.print("PIR ON");
+    Serial.print("PIR ");
     Serial.println(sensor->pin);
-    if (systemIdleState) {
       effectDirection = sensor->effectDirection;
       if (ROTATE_EFFECTS) {
         curEffect = ++effectCounter % EFFECTS_AMOUNT;
       }
-    } else {
-      if (effectDirection == 1) {
-        stepFader(0, 1);
-      } else {
-        stepFader(1, 1);
-      }
-      nightLight();
-    }
-    systemIdleState = !systemIdleState;
+    systemIdleState = false;
   }
   sensor->lastState = newState;
 }
