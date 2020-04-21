@@ -35,38 +35,37 @@ void stepFader(bool dir, bool state) {
               EVERY_MS(50) {
                 changeBright -= 5;
                 if (changeBright < 0) break;
-                strip.setBrightness(changeBright);
+                setBrightness(changeBright);
                 fireStairs(0, 0, 0);
-                strip.show();
+                show();
               }
             }
-            strip.clear();
-            strip.setBrightness(curBright);
-            strip.show();
+            clear();
+            setBrightness(curBright);
+            show();
           } else {
             int changeBright = 0;
-            strip.setBrightness(0);
+            setBrightness(0);
             while (1) {
               EVERY_MS(50) {
                 changeBright += 5;
                 if (changeBright > curBright) break;
-                strip.setBrightness(changeBright);
+                setBrightness(changeBright);
                 fireStairs(0, 0, 0);
-                strip.show();
+                show();
               }
-              strip.setBrightness(curBright);
+              setBrightness(curBright);
             }
           }
           return;
-          break;
       }
-      strip.show();
+      show();
       if (counter == STEP_AMOUNT) break;
     }
   }
   if (state == 1) {
-    strip.clear();
-    strip.show();
+    clear();
+    show();
   }
 }
 
@@ -94,11 +93,25 @@ void fireStairs(int8_t dir, byte from, byte to) {
                                           ))));
     }
   }
+#if (RAILING == 1)
+  FOR_i(0, RAILING_SEGMENT_LENGTH) {
+    FOR_j(0, STEP_AMOUNT) {
+      railing.setPix(i, j, mHEX(getPixColor(ColorFromPalette(
+                                              firePalette,
+                                              (inoise8(i * FIRE_STEP, j * FIRE_STEP, counter)),
+                                              255,
+                                              LINEARBLEND
+                                            ))));
+    }
+  }
+#endif
   counter += 10;
 }
+
 uint32_t getPixColor(CRGB thisPixel) {
   return (((uint32_t)thisPixel.r << 16) | (thisPixel.g << 8) | thisPixel.b);
 }
+
 CRGB getFireColor(int val) {
   // чем больше val, тем сильнее сдвигается цвет, падает насыщеность и растёт яркость
   return CHSV(
@@ -140,6 +153,11 @@ void fillStep(int8_t num, LEDdata color) {
   FOR_i(num * STEP_LENGTH, num * STEP_LENGTH + STEP_LENGTH) {
     stripLEDs[i] = color;
   }
+#if (RAILING == 1)
+  FOR_i(num * RAILING_SEGMENT_LENGTH, num * RAILING_SEGMENT_LENGTH + RAILING_SEGMENT_LENGTH) {
+    railingLEDs[i] = color;
+  }
+#endif
 }
 
 void fillStepWithBitMask(int8_t num, LEDdata color, uint32_t bitMask) {
@@ -149,14 +167,21 @@ void fillStepWithBitMask(int8_t num, LEDdata color, uint32_t bitMask) {
       stripLEDs[i] = color;
     }
   }
+#if (RAILING == 1)
+  FOR_i(num * RAILING_SEGMENT_LENGTH, num * RAILING_SEGMENT_LENGTH + RAILING_SEGMENT_LENGTH) {
+    if (bitRead(bitMask, i % RAILING_SEGMENT_LENGTH)) {
+      railingLEDs[i] = color;
+    }
+  }
+#endif
 }
 
 void animatedSwitchOff(int bright) {
   int changeBright = bright;
   do {
     delay(50);
-    strip.setBrightness(changeBright);
-    strip.show();
+    setBrightness(changeBright);
+    show();
     changeBright -= 5;
   } while (changeBright > 0);
 }
@@ -165,8 +190,29 @@ void animatedSwitchOn(int bright) {
   int changeBright = 0;
   do {
     delay(50);
-    strip.setBrightness(changeBright);
-    strip.show();
+    setBrightness(changeBright);
+    show();
     changeBright += 5;
   } while (changeBright < bright);
+}
+
+void setBrightness(int brightness) {
+  strip.setBrightness(brightness);
+#if (RAILING == 1)
+  railing.setBrightness(brightness);
+#endif
+}
+
+void show() {
+  strip.show();
+#if (RAILING == 1)
+  railing.show();
+#endif
+}
+
+void clear() {
+  strip.clear();
+#if (RAILING == 1)
+  railing.clear();
+#endif
 }

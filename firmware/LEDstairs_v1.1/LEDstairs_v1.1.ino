@@ -34,6 +34,10 @@
 #define NIGHT_LIGHT_BRIGHT 50  // 0 - 255
 #define NIGHT_PHOTO_MAX 500   // максимальное значение фоторезистора для отключения подсветки
 
+#define RAILING 0      // 0/1 вкл/выкл - подсветка перил
+#define RAILING_LED_AMOUNT 50    // количество чипов WS2811 на ленте перил
+#define RAILING_PIN 11    // пин ленты перил
+
 // пины
 // если перепутаны сенсоры - можно поменять их местами в коде! Вот тут
 #define SENSOR_START 3
@@ -48,6 +52,7 @@
 #define ORDER_BGR       // порядок цветов ORDER_GRB / ORDER_RGB / ORDER_BRG
 #define COLOR_DEBTH 2   // цветовая глубина: 1, 2, 3 (в байтах)
 #define STRIP_LED_AMOUNT STEP_AMOUNT * STEP_LENGTH // кол-во светодиодов
+#define RAILING_SEGMENT_LENGTH  RAILING_LED_AMOUNT / STEP_AMOUNT   // количество чипов WS2811 на сегмент ленты перил
 
 // ==== удобные макросы ====
 #define FOR_i(from, to) for(int i = (from); i < (to); i++)
@@ -60,8 +65,11 @@
   if (flag)
 //===========================
 
-LEDdata stripLEDs[STRIP_LED_AMOUNT];  // буфер ленты
+LEDdata stripLEDs[STRIP_LED_AMOUNT];  // буфер ленты ступенек
 microLED strip(stripLEDs, STRIP_PIN, STEP_LENGTH, STEP_AMOUNT, ZIGZAG, LEFT_BOTTOM, DIR_RIGHT);  // объект матрица
+
+LEDdata railingLEDs[RAILING_LED_AMOUNT];  // буфер ленты перил
+microLED railing(railingLEDs, RAILING_PIN, RAILING_SEGMENT_LENGTH, STEP_AMOUNT, ZIGZAG, LEFT_BOTTOM, DIR_RIGHT);  // объект матрица
 
 int effSpeed;
 int8_t effectDirection;
