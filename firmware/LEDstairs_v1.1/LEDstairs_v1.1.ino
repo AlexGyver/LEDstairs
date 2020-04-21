@@ -6,9 +6,8 @@
   - цвет NIGHT_LIGHT_COLOR
   - яркость NIGHT_LIGHT_BRIGHT
   - максимальное значение фоторезистора NIGHT_PHOTO_MAX для отключения подсветки
-  
+
   Автор: Геннадий Дегтерёв, 2020
-  https://degterjow.de/
   gennadij@degterjow.de
 
   Скетч к проекту "Подсветка лестницы"
@@ -48,7 +47,7 @@
 
 #define ORDER_BGR       // порядок цветов ORDER_GRB / ORDER_RGB / ORDER_BRG
 #define COLOR_DEBTH 2   // цветовая глубина: 1, 2, 3 (в байтах)
-#define NUMLEDS STEP_AMOUNT * STEP_LENGTH // кол-во светодиодов
+#define STRIP_LED_AMOUNT STEP_AMOUNT * STEP_LENGTH // кол-во светодиодов
 
 // ==== удобные макросы ====
 #define FOR_i(from, to) for(int i = (from); i < (to); i++)
@@ -61,8 +60,8 @@
   if (flag)
 //===========================
 
-LEDdata leds[NUMLEDS];  // буфер ленты
-microLED strip(leds, STRIP_PIN, STEP_LENGTH, STEP_AMOUNT, ZIGZAG, LEFT_BOTTOM, DIR_RIGHT);  // объект матрица
+LEDdata stripLEDs[STRIP_LED_AMOUNT];  // буфер ленты
+microLED strip(stripLEDs, STRIP_PIN, STEP_LENGTH, STEP_AMOUNT, ZIGZAG, LEFT_BOTTOM, DIR_RIGHT);  // объект матрица
 
 int effSpeed;
 int8_t effectDirection;
@@ -136,7 +135,7 @@ void handlePhotoResistor() {
       Serial.println("System OFF");
     else
       Serial.println("System ON");
-    curBright = map(photo, 30, 800, 10, 200);
+    curBright = systemOffState ? 0 : map(photo, 30, 800, 10, 200);
     strip.setBrightness(curBright);
     Serial.print("LED bright ");
     Serial.println(curBright);
@@ -171,12 +170,12 @@ void handleTimeout() {
   if (millis() - timeoutCounter >= (TIMEOUT * 1000L)) {
     Serial.println("Timeout");
     systemIdleState = true;
-      if (effectDirection == 1) {
-          stepFader(0, 1);
-      } else {
-          stepFader(1, 1);
-      }
-      nightLight();
+    if (effectDirection == 1) {
+      stepFader(0, 1);
+    } else {
+      stepFader(1, 1);
+    }
+    nightLight();
   }
 }
 
@@ -188,10 +187,10 @@ void handlePirSensor(PirSensor *sensor) {
     timeoutCounter = millis();
     Serial.print("PIR ");
     Serial.println(sensor->pin);
-      effectDirection = sensor->effectDirection;
-      if (ROTATE_EFFECTS) {
-        curEffect = ++effectCounter % EFFECTS_AMOUNT;
-      }
+    effectDirection = sensor->effectDirection;
+    if (ROTATE_EFFECTS) {
+      curEffect = ++effectCounter % EFFECTS_AMOUNT;
+    }
     systemIdleState = false;
   }
   sensor->lastState = newState;
