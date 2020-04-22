@@ -94,7 +94,7 @@ void fireStairs(int8_t dir, byte from, byte to) {
     }
   }
 #if (RAILING == 1)
-  FOR_i(0, RAILING_SEGMENT_LENGTH) {
+  FOR_i(0, railingSegmentLength) {
     FOR_j(0, STEP_AMOUNT) {
       railing.setPix(i, j, mHEX(getPixColor(ColorFromPalette(
                                               firePalette,
@@ -154,7 +154,7 @@ void fillStep(int8_t num, LEDdata color) {
     stripLEDs[i] = color;
   }
 #if (RAILING == 1)
-  FOR_i(num * RAILING_SEGMENT_LENGTH, num * RAILING_SEGMENT_LENGTH + RAILING_SEGMENT_LENGTH) {
+  FOR_i(num * railingSegmentLength, num * railingSegmentLength + railingSegmentLength) {
     railingLEDs[i] = color;
   }
 #endif
@@ -168,8 +168,8 @@ void fillStepWithBitMask(int8_t num, LEDdata color, uint32_t bitMask) {
     }
   }
 #if (RAILING == 1)
-  FOR_i(num * RAILING_SEGMENT_LENGTH, num * RAILING_SEGMENT_LENGTH + RAILING_SEGMENT_LENGTH) {
-    if (bitRead(bitMask, i % RAILING_SEGMENT_LENGTH)) {
+  FOR_i(num * railingSegmentLength, num * railingSegmentLength + railingSegmentLength) {
+    if (bitRead(bitMask, i % railingSegmentLength)) {
       railingLEDs[i] = color;
     }
   }

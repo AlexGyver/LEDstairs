@@ -1,12 +1,5 @@
 /*
-  Новые функции в прошивке 1.1
-  1) поддержка ночного режима. Подсвечиваются крайние ступеньки.
-  Настройка:
-  - маска (какие диоды на ленте включать) NIGHT_LIGHT_BIT_MASK
-  - цвет NIGHT_LIGHT_COLOR
-  - яркость NIGHT_LIGHT_BRIGHT
-  - максимальное значение фоторезистора NIGHT_PHOTO_MAX для отключения подсветки
-
+  Новые функции в прошивке 1.1 описаны в README.MD
   Автор: Геннадий Дегтерёв, 2020
   gennadij@degterjow.de
 
@@ -27,7 +20,7 @@
 #define FADR_SPEED 300         // скорость переключения с одной ступеньки на другую
 #define START_EFFECT RAINBOW   // режим при старте COLOR, RAINBOW, FIRE
 #define ROTATE_EFFECTS 1      // 0/1 - автосмена эффектов
-#define TIMEOUT 15            // секунд, таймаут выключения ступенек, если не сработал конечный датчик
+#define TIMEOUT 15            // секунд, таймаут выключения ступенек после срабатывания одного из датчиков движения
 
 #define NIGHT_LIGHT_BIT_MASK 0b10101010101010101010101010101010  // последовательность диодов в ночном режиме
 #define NIGHT_LIGHT_COLOR 100  // 0 - 255
@@ -35,14 +28,14 @@
 #define NIGHT_PHOTO_MAX 500   // максимальное значение фоторезистора для отключения подсветки
 
 #define RAILING 0      // 0/1 вкл/выкл - подсветка перил
-#define RAILING_LED_AMOUNT 50    // количество чипов WS2811 на ленте перил
-#define RAILING_PIN 11    // пин ленты перил
+#define RAILING_LED_AMOUNT 75    // количество чипов WS2811 на ленте перил
 
 // пины
 // если перепутаны сенсоры - можно поменять их местами в коде! Вот тут
 #define SENSOR_START 3
 #define SENSOR_END 2
-#define STRIP_PIN 12    // пин ленты
+#define STRIP_PIN 12    // пин ленты ступенек
+#define RAILING_PIN 11   // пин ленты перил
 #define PHOTO_PIN A0
 
 // для разработчиков
@@ -51,8 +44,7 @@
 
 #define ORDER_BGR       // порядок цветов ORDER_GRB / ORDER_RGB / ORDER_BRG
 #define COLOR_DEBTH 2   // цветовая глубина: 1, 2, 3 (в байтах)
-#define STRIP_LED_AMOUNT STEP_AMOUNT * STEP_LENGTH // кол-во светодиодов
-#define RAILING_SEGMENT_LENGTH  RAILING_LED_AMOUNT / STEP_AMOUNT   // количество чипов WS2811 на сегмент ленты перил
+#define STRIP_LED_AMOUNT STEP_AMOUNT * STEP_LENGTH // кол-во светодиодов на всех ступеньках
 
 // ==== удобные макросы ====
 #define FOR_i(from, to) for(int i = (from); i < (to); i++)
@@ -65,11 +57,13 @@
   if (flag)
 //===========================
 
+int railingSegmentLength = RAILING_LED_AMOUNT / STEP_AMOUNT;   // количество чипов WS2811 на сегмент ленты перил
+
 LEDdata stripLEDs[STRIP_LED_AMOUNT];  // буфер ленты ступенек
 microLED strip(stripLEDs, STRIP_PIN, STEP_LENGTH, STEP_AMOUNT, ZIGZAG, LEFT_BOTTOM, DIR_RIGHT);  // объект матрица
 
 LEDdata railingLEDs[RAILING_LED_AMOUNT];  // буфер ленты перил
-microLED railing(railingLEDs, RAILING_PIN, RAILING_SEGMENT_LENGTH, STEP_AMOUNT, ZIGZAG, LEFT_BOTTOM, DIR_RIGHT);  // объект матрица
+microLED railing(railingLEDs, RAILING_PIN, railingSegmentLength, STEP_AMOUNT, ZIGZAG, LEFT_BOTTOM, DIR_RIGHT);  // объект матрица
 
 int effSpeed;
 int8_t effectDirection;
@@ -87,15 +81,15 @@ struct PirSensor {
   bool lastState;
 };
 PirSensor startPirSensor = { 1, SENSOR_START, false};
-PirSensor endPirSensor = { 1, SENSOR_END, false};
+PirSensor endPirSensor = { -1, SENSOR_END, false};
 
 CRGBPalette16 firePalette;
 
 void setup() {
   Serial.begin(9600);
-  strip.setBrightness(curBright);    // яркость (0-255)
-  strip.clear();
-  strip.show();
+  setBrightness(curBright);    // яркость (0-255)
+  clear();
+  show();
   firePalette = CRGBPalette16(
                   getFireColor(0 * 16),
                   getFireColor(1 * 16),
@@ -115,8 +109,8 @@ void setup() {
                   getFireColor(15 * 16)
                 );
   delay(100);
-  strip.clear();
-  strip.show();
+  clear();
+  show();
 }
 
 void loop() {
@@ -144,7 +138,7 @@ void handlePhotoResistor() {
     else
       Serial.println("System ON");
     curBright = systemOffState ? 0 : map(photo, 30, 800, 10, 200);
-    strip.setBrightness(curBright);
+    setBrightness(curBright);
     Serial.print("LED bright ");
     Serial.println(curBright);
   }
@@ -159,16 +153,14 @@ void handleNightLight() {
 
 void nightLight() {
   if (systemOffState) {
-    strip.clear();
-    strip.show();
+    clear();
+    show();
     return;
   }
   // инвертируем маску, чтобы диоды не выгорали
   nightLightBitMask = ~nightLightBitMask;
-  Serial.print("Night light bit mask ");
-  Serial.println(nightLightBitMask, BIN);
   animatedSwitchOff(NIGHT_LIGHT_BRIGHT);
-  strip.clear();
+  clear();
   fillStepWithBitMask(0, mHSV(NIGHT_LIGHT_COLOR, 255, NIGHT_LIGHT_BRIGHT), nightLightBitMask);
   fillStepWithBitMask(STEP_AMOUNT - 1, mHSV(NIGHT_LIGHT_COLOR, 255, NIGHT_LIGHT_BRIGHT), nightLightBitMask);
   animatedSwitchOn(NIGHT_LIGHT_BRIGHT);
@@ -176,7 +168,6 @@ void nightLight() {
 
 void handleTimeout() {
   if (millis() - timeoutCounter >= (TIMEOUT * 1000L)) {
-    Serial.println("Timeout");
     systemIdleState = true;
     if (effectDirection == 1) {
       stepFader(0, 1);
@@ -193,8 +184,8 @@ void handlePirSensor(PirSensor *sensor) {
   int newState = digitalRead(sensor->pin);
   if (systemIdleState && newState && !sensor->lastState) {
     timeoutCounter = millis();
-    Serial.print("PIR ");
-    Serial.println(sensor->pin);
+    //Serial.print("PIR ");
+    //Serial.println(sensor->pin);
     effectDirection = sensor->effectDirection;
     if (ROTATE_EFFECTS) {
       curEffect = ++effectCounter % EFFECTS_AMOUNT;
@@ -214,6 +205,6 @@ void effectFlow() {
       case RAINBOW: rainbowStripes(-effectDirection, 0, STEP_AMOUNT); break; // rainbowStripes - приёмный
       case FIRE: fireStairs(effectDirection, 0, 0); break;
     }
-    strip.show();
+    show();
   }
 }
