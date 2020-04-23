@@ -38,12 +38,13 @@
 #define RAILING_PIN 11   // пин ленты перил
 #define PHOTO_PIN A0
 
+#define ORDER_BGR       // порядок цветов ORDER_GRB / ORDER_RGB / ORDER_BRG
+#define COLOR_DEBTH 2   // цветовая глубина: 1, 2, 3 (в байтах)
+
 // для разработчиков
 #include <microLED.h>
 #include <FastLED.h> // ФЛ для функции Noise
 
-#define ORDER_BGR       // порядок цветов ORDER_GRB / ORDER_RGB / ORDER_BRG
-#define COLOR_DEBTH 2   // цветовая глубина: 1, 2, 3 (в байтах)
 #define STRIP_LED_AMOUNT STEP_AMOUNT * STEP_LENGTH // кол-во светодиодов на всех ступеньках
 
 // ==== удобные макросы ====
