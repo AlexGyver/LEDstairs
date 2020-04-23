@@ -64,7 +64,7 @@ LEDdata stripLEDs[STRIP_LED_AMOUNT];  // буфер ленты ступенек
 microLED strip(stripLEDs, STRIP_PIN, STEP_LENGTH, STEP_AMOUNT, ZIGZAG, LEFT_BOTTOM, DIR_RIGHT);  // объект матрица
 
 LEDdata railingLEDs[RAILING_LED_AMOUNT];  // буфер ленты перил
-microLED railing(railingLEDs, RAILING_PIN, railingSegmentLength, STEP_AMOUNT, ZIGZAG, LEFT_BOTTOM, DIR_RIGHT);  // объект матрица
+microLED railing(railingLEDs, RAILING_LED_AMOUNT, RAILING_PIN);  // объект лента
 
 int effSpeed;
 int8_t effectDirection;
@@ -135,14 +135,14 @@ void handlePhotoResistor() {
     Serial.print("Photo resistor ");
     Serial.println(photo);
     systemOffState = photo > NIGHT_PHOTO_MAX;
-//    if (systemOffState)
-//      Serial.println("System OFF");
-//    else
-//      Serial.println("System ON");
+    //    if (systemOffState)
+    //      Serial.println("System OFF");
+    //    else
+    //      Serial.println("System ON");
     curBright = systemOffState ? 0 : map(photo, 30, 800, 10, 200);
     setBrightness(curBright);
-//    Serial.print("LED bright ");
-//    Serial.println(curBright);
+    //    Serial.print("LED bright ");
+    //    Serial.println(curBright);
   }
 #endif
 }
