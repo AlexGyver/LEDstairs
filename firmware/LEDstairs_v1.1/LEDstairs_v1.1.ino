@@ -80,6 +80,7 @@ struct PirSensor {
   int8_t pin;
   bool lastState;
 };
+
 PirSensor startPirSensor = { 1, SENSOR_START, false};
 PirSensor endPirSensor = { -1, SENSOR_END, false};
 
@@ -130,17 +131,17 @@ void handlePhotoResistor() {
 #if (AUTO_BRIGHT == 1)
   EVERY_MS(3000) {            // каждые 3 сек
     int photo = analogRead(PHOTO_PIN);
-    Serial.print("Photoresistor ");
+    Serial.print("Photo resistor ");
     Serial.println(photo);
     systemOffState = photo > NIGHT_PHOTO_MAX;
-    if (systemOffState)
-      Serial.println("System OFF");
-    else
-      Serial.println("System ON");
+//    if (systemOffState)
+//      Serial.println("System OFF");
+//    else
+//      Serial.println("System ON");
     curBright = systemOffState ? 0 : map(photo, 30, 800, 10, 200);
     setBrightness(curBright);
-    Serial.print("LED bright ");
-    Serial.println(curBright);
+//    Serial.print("LED bright ");
+//    Serial.println(curBright);
   }
 #endif
 }
@@ -190,6 +191,7 @@ void handlePirSensor(PirSensor *sensor) {
     if (ROTATE_EFFECTS) {
       curEffect = ++effectCounter % EFFECTS_AMOUNT;
     }
+    stepFader(effectDirection == 1 ? 0 : 1,  0);
     systemIdleState = false;
   }
   sensor->lastState = newState;
