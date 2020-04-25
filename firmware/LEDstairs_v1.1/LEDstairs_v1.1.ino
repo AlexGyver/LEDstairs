@@ -11,32 +11,32 @@
   https://AlexGyver.ru/
 */
 
-#define STEP_AMOUNT 5     // количество ступенек
-#define STEP_LENGTH 16    // количество чипов WS2811 на ступеньку
+#define STEP_AMOUNT 11     // количество ступенек
+#define STEP_LENGTH 7    // количество чипов WS2811 на ступеньку
 
-#define AUTO_BRIGHT 1     // автояркость 0/1 вкл/выкл (с фоторезистором)
+#define AUTO_BRIGHT 1     // автояркость вкл(1)/выкл(0) (с фоторезистором)
 #define CUSTOM_BRIGHT 100  // ручная яркость
 
-#define FADR_SPEED 300         // скорость переключения с одной ступеньки на другую
+#define FADR_SPEED 300         // скорость переключения с одной ступеньки на другую, меньше - быстрее
 #define START_EFFECT RAINBOW   // режим при старте COLOR, RAINBOW, FIRE
-#define ROTATE_EFFECTS 1      // 0/1 - автосмена эффектов
+#define ROTATE_EFFECTS 1      // вкл(1)/выкл(0) - автосмена эффектов
 #define TIMEOUT 15            // секунд, таймаут выключения ступенек после срабатывания одного из датчиков движения
 
-#define NIGHT_LIGHT_BIT_MASK 0b10101010101010101010101010101010  // последовательность диодов в ночном режиме
-#define NIGHT_LIGHT_COLOR 100  // 0 - 255
-#define NIGHT_LIGHT_BRIGHT 50  // 0 - 255
-#define NIGHT_PHOTO_MAX 500   // максимальное значение фоторезистора для отключения подсветки
+#define NIGHT_LIGHT_BIT_MASK 0b10101010101010101010101010101010  // последовательность диодов в ночном режиме, чтобы диоды не выгорали
+#define NIGHT_LIGHT_COLOR mCOLOR(WHITE)  // по умолчанию белый
+#define NIGHT_LIGHT_BRIGHT 75  // 0 - 255 яркость ночной подсветки
+#define NIGHT_PHOTO_MAX 500   // максимальное значение фоторезистора для отключения подсветки, при освещении выше этого подсветка полностью отключается
 
-#define RAILING 0      // 0/1 вкл/выкл - подсветка перил
+#define RAILING 0      // вкл(1)/выкл(0) - подсветка перил
 #define RAILING_LED_AMOUNT 75    // количество чипов WS2811 на ленте перил
 
 // пины
 // если перепутаны сенсоры - можно поменять их местами в коде! Вот тут
-#define SENSOR_START 3
-#define SENSOR_END 2
-#define STRIP_PIN 12    // пин ленты ступенек
+#define SENSOR_START 3   // пин датчика движения
+#define SENSOR_END 2     // пин датчика движения
+#define STRIP_PIN 12     // пин ленты ступенек
 #define RAILING_PIN 11   // пин ленты перил
-#define PHOTO_PIN A0
+#define PHOTO_PIN A0     // пин фоторезистора
 
 #define ORDER_BGR       // порядок цветов ORDER_GRB / ORDER_RGB / ORDER_BRG
 #define COLOR_DEBTH 2   // цветовая глубина: 1, 2, 3 (в байтах)
