@@ -10,12 +10,18 @@
   * яркость NIGHT_LIGHT_BRIGHT
 
 ```c
-#define NIGHT_LIGHT_BIT_MASK 0b1000000100000001  // последовательность диодов в ночном режиме
-#define NIGHT_LIGHT_COLOR 50  // 0 - 255
-#define NIGHT_LIGHT_BRIGHT 50  // 0 - 255
+int16_t NIGHT_LIGHT_BIT_MASK = 0b0100100100100100;  // последовательность диодов в ночном режиме, чтобы диоды не выгорали
+#define NIGHT_LIGHT_COLOR mCOLOR(WHITE)  // по умолчанию белый
+#define NIGHT_LIGHT_BRIGHT 10  // 0 - 255
 ```
 Чтобы не выжигать одни и теже диоды, маска инвертируется каждые 60 секунд  
-  
+Цвет ночной подсветки можно определить через функции библиотеки microLED:
+* mCOLOR(WHITE) или SILVER,GRAY,BLACK,RED,MAROON,ORANGE,YELLOW,OLIVE,LIME,GREEN,AQUA,TEAL,BLUE,NAVY,MAGENTA,PURPLE
+* mRGB(byte r, byte g, byte b);   // RGB 255, 255, 255
+* mWHEEL(int color);              // цвета 0-1530
+* mHEX(uint32_t color);           // HEX цвет
+* mHSV(byte h, byte s, byte v);   // HSV 255, 255, 255
+
 ***
 ### включение только при минимальной освещённости
 
