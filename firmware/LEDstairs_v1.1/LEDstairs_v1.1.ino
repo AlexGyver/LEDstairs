@@ -11,8 +11,8 @@
   https://AlexGyver.ru/
 */
 
-#define STEP_AMOUNT 11     // количество ступенек
-#define STEP_LENGTH 7    // количество чипов WS2811 на ступеньку
+#define STEP_AMOUNT 16     // количество ступенек
+#define STEP_LENGTH 16    // количество чипов WS2811 на ступеньку
 
 #define AUTO_BRIGHT 1     // автояркость вкл(1)/выкл(0) (с фоторезистором)
 #define CUSTOM_BRIGHT 100  // ручная яркость
@@ -22,9 +22,9 @@
 #define ROTATE_EFFECTS 1      // вкл(1)/выкл(0) - автосмена эффектов
 #define TIMEOUT 15            // секунд, таймаут выключения ступенек после срабатывания одного из датчиков движения
 
-#define NIGHT_LIGHT_BIT_MASK 0b10101010101010101010101010101010  // последовательность диодов в ночном режиме, чтобы диоды не выгорали
+int16_t NIGHT_LIGHT_BIT_MASK = 0b0100100100100100;  // последовательность диодов в ночном режиме, чтобы диоды не выгорали
 #define NIGHT_LIGHT_COLOR mCOLOR(WHITE)  // по умолчанию белый
-#define NIGHT_LIGHT_BRIGHT 75  // 0 - 255 яркость ночной подсветки
+#define NIGHT_LIGHT_BRIGHT 10  // 0 - 255 яркость ночной подсветки
 #define NIGHT_PHOTO_MAX 500   // максимальное значение фоторезистора для отключения подсветки, при освещении выше этого подсветка полностью отключается
 
 #define RAILING 0      // вкл(1)/выкл(0) - подсветка перил
@@ -74,7 +74,7 @@ byte effectCounter;
 uint32_t timeoutCounter;
 bool systemIdleState;
 bool systemOffState;
-uint32_t nightLightBitMask = NIGHT_LIGHT_BIT_MASK;
+uint16_t nightLightBitMask = NIGHT_LIGHT_BIT_MASK;
 
 struct PirSensor {
   int8_t effectDirection;
@@ -159,12 +159,12 @@ void nightLight() {
     show();
     return;
   }
-  // инвертируем маску, чтобы диоды не выгорали
-  nightLightBitMask = ~nightLightBitMask;
+  // циклически сдвигаем маску, чтобы диоды не выгорали
+  nightLightBitMask = nightLightBitMask >> 1 | nightLightBitMask << 15;
   animatedSwitchOff(NIGHT_LIGHT_BRIGHT);
   clear();
-  fillStepWithBitMask(0, mHSV(NIGHT_LIGHT_COLOR, 255, NIGHT_LIGHT_BRIGHT), nightLightBitMask);
-  fillStepWithBitMask(STEP_AMOUNT - 1, mHSV(NIGHT_LIGHT_COLOR, 255, NIGHT_LIGHT_BRIGHT), nightLightBitMask);
+  fillStepWithBitMask(0, NIGHT_LIGHT_COLOR, nightLightBitMask);
+  fillStepWithBitMask(STEP_AMOUNT - 1, NIGHT_LIGHT_COLOR, nightLightBitMask);
   animatedSwitchOn(NIGHT_LIGHT_BRIGHT);
 }
 
