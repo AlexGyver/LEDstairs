@@ -163,7 +163,7 @@ void fillStep(int8_t num, LEDdata color) {
 void fillStepWithBitMask(int8_t num, LEDdata color, uint32_t bitMask) {
   if (num >= STEP_AMOUNT || num < 0) return;
   FOR_i(num * STEP_LENGTH, num * STEP_LENGTH + STEP_LENGTH) {
-    if (bitRead(bitMask, i % STEP_LENGTH)) {
+    if (bitRead(bitMask, i % STEP_LENGTH) % 16) {
       stripLEDs[i] = color;
     }
   }
