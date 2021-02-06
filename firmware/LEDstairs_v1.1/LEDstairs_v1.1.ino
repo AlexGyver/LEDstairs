@@ -135,14 +135,8 @@ void handlePhotoResistor() {
     Serial.print("Photo resistor ");
     Serial.println(photo);
     systemOffState = photo > NIGHT_PHOTO_MAX;
-    //    if (systemOffState)
-    //      Serial.println("System OFF");
-    //    else
-    //      Serial.println("System ON");
     curBright = systemOffState ? 0 : map(photo, 30, 800, 10, 200);
     setBrightness(curBright);
-    //    Serial.print("LED bright ");
-    //    Serial.println(curBright);
   }
 #endif
 }
@@ -184,16 +178,16 @@ void handlePirSensor(PirSensor *sensor) {
   if (systemOffState) return;
 
   int newState = digitalRead(sensor->pin);
-  if (systemIdleState && newState && !sensor->lastState) {
-    timeoutCounter = millis();
-    //Serial.print("PIR ");
-    //Serial.println(sensor->pin);
-    effectDirection = sensor->effectDirection;
-    if (ROTATE_EFFECTS) {
-      curEffect = ++effectCounter % EFFECTS_AMOUNT;
+  if (newState && !sensor->lastState)
+    timeoutCounter = millis(); // при срабатывании датчика устанавливаем заново timeout
+    if (systemIdleState) {
+      effectDirection = sensor->effectDirection;
+      if (ROTATE_EFFECTS) {
+        curEffect = ++effectCounter % EFFECTS_AMOUNT;
+      }
+      stepFader(effectDirection == 1 ? 0 : 1,  0);
+      systemIdleState = false;
     }
-    stepFader(effectDirection == 1 ? 0 : 1,  0);
-    systemIdleState = false;
   }
   sensor->lastState = newState;
 }
