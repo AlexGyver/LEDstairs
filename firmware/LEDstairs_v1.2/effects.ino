@@ -155,7 +155,7 @@ void rainbowStripes(int8_t dir, byte from, byte to) {
 // ========= залить ступеньку цветом (служебное)
 void fillStep(int8_t num, LEDdata color) {
   if (num >= STEP_AMOUNT || num < 0) return;
-  for(int i = steps[num].start; i < steps[num].start + steps[num].led_amount; i++) {
+  for(int i = steps_start[num]; i < steps_start[num] + steps[num].led_amount; i++) {
     stripLEDs[i] = color;
   }
 #if (RAILING == 1)
@@ -167,7 +167,7 @@ void fillStep(int8_t num, LEDdata color) {
 
 void fillStepWithBitMask(int8_t num, LEDdata color, uint32_t bitMask) {
   if (num >= STEP_AMOUNT || num < 0) return;
-  for(int i = steps[num].start; i < steps[num].start + steps[num].led_amount; i++) {
+  for(int i = steps_start[num]; i < steps_start[num] + steps[num].led_amount; i++) {
     if (bitRead(bitMask, i % steps[num].led_amount) % 16) {
       stripLEDs[i] = color;
     }

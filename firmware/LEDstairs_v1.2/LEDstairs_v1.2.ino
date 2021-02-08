@@ -12,9 +12,8 @@
 */
 
 struct Step {
-  int8_t start;
   int8_t led_amount;
-  bool nightMode;  
+  bool night_mode;  
 };
 
 #define STRIP_LED_AMOUNT 256  // кол-во светодиодов на всех ступеньках
@@ -22,22 +21,22 @@ struct Step {
 
 // описание всех ступенек с возможностью подсветки ЛЮБЫХ ступенек в ночном режиме
 Step steps[STEP_AMOUNT] = { 
-{ 0, 16, true },    // первая ступенька начинается с диода 0, всего диодов на ступенке 16, true - подсвечивается в ночном режиме
-{ 16, 16, false },  // вторая ступенька начинается с диода 16 (первая 0-15), всего диодов на ступенке 16, false - не подсвечивается в ночном режиме
-{ 32, 16, false },
-{ 48, 16, false },
-{ 64, 16, false },
-{ 80, 16, false },
-{ 96, 16, false },
-{ 112, 16, false },
-{ 128, 16, false },
-{ 144, 16, false },
-{ 160, 16, false },
-{ 176, 16, false },
-{ 192, 16, false },
-{ 208, 16, false },
-{ 224, 16, false },
-{ 240, 16, true }
+{ 16, true },    // первая ступенька 16 диодов, true - подсвечивается в ночном режиме
+{ 16, false },   // вторая ступенька 16 диодов, false - не подсвечивается в ночном режиме
+{ 16, false },   // 3
+{ 16, false },   // 4 
+{ 16, false },   // 5
+{ 16, false },   // 6
+{ 16, false },   // 7
+{ 16, false },   // 8
+{ 16, false },   // 9
+{ 16, false },   // 10
+{ 16, false },   // 11
+{ 16, false },   // 12
+{ 16, false },   // 13
+{ 16, false },   // 14
+{ 16, false },   // 15
+{ 16, true }     // 16
 };
 
 #define AUTO_BRIGHT 1     // автояркость вкл(1)/выкл(0) (с фоторезистором)
@@ -106,6 +105,7 @@ uint32_t timeoutCounter;
 bool systemIdleState;
 bool systemOffState;
 uint16_t nightLightBitMask = NIGHT_LIGHT_BIT_MASK;
+int steps_start[STEP_AMOUNT];
 
 struct PirSensor {
   int8_t effectDirection;
@@ -157,9 +157,12 @@ void setup() {
                   getFireColor(15 * 16)
                 );
   // определяем минимальную ширину ступеньки для корректной работы эффекта огня
+  steps_start[0] = 0;
   FOR_i(1, STEP_AMOUNT) {
-    if (steps[i].led_amount < minStepLength)
+    if (steps[i].led_amount < minStepLength) {
       minStepLength = steps[i].led_amount;
+    }
+    steps_start[i] = steps_start[i-1] + steps[i-1].led_amount; // вычисляем стартовые позиции каждой ступеньки
   }
   delay(100);
   clear();
@@ -222,8 +225,9 @@ void nightLight() {
   nightLightBitMask = nightLightBitMask >> 1 | nightLightBitMask << 15;
   animatedSwitchOff(NIGHT_LIGHT_BRIGHT);
   clear();
-  fillStepWithBitMask(0, NIGHT_LIGHT_COLOR, nightLightBitMask);
-  fillStepWithBitMask(STEP_AMOUNT - 1, NIGHT_LIGHT_COLOR, nightLightBitMask);
+  FOR_i(0, STEP_AMOUNT) {
+    if (steps[i].night_mode) fillStepWithBitMask(i, NIGHT_LIGHT_COLOR, nightLightBitMask);
+  }
   animatedSwitchOn(NIGHT_LIGHT_BRIGHT);
 }
 
