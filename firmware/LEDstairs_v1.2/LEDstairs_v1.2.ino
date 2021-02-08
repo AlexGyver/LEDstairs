@@ -210,7 +210,7 @@ void handlePirSensor(PirSensor *sensor) {
   if (systemOffState) return;
 
   int newState = digitalRead(sensor->pin);
-  if (newState && !sensor->lastState)
+  if (newState && !sensor->lastState) {
     timeoutCounter = millis(); // при срабатывании датчика устанавливаем заново timeout
     if (systemIdleState) {
       effectDirection = sensor->effectDirection;
