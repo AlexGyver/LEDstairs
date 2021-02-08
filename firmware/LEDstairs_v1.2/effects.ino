@@ -83,9 +83,14 @@ void stepFader(bool dir, bool state) {
 void fireStairs(int8_t dir, byte from, byte to) {
   effSpeed = 30;
   static uint16_t counter = 0;
-  FOR_i(0, STEP_LENGTH) {
+  int start_led_index = 0;
+
+  FOR_i(0, minStepLength) {
+    start_led_index = 0;
     FOR_j(0, STEP_AMOUNT) {
-      strip.setPix(i, j, mHEX(getPixColor(ColorFromPalette(
+      if (j > 0) start_led_index += steps[j-1].led_amount;
+      // из за разных длин ступенек теперь это не матрица, а лента
+      strip.setLED(start_led_index + i, mHEX(getPixColor(ColorFromPalette(
                                             firePalette,
                                             (inoise8(i * FIRE_STEP, j * FIRE_STEP, counter)),
                                             255,

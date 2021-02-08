@@ -50,7 +50,7 @@ Step steps[STEP_AMOUNT] = {
 
 int16_t NIGHT_LIGHT_BIT_MASK = 0b0100100100100100;  // последовательность диодов в ночном режиме, чтобы диоды не выгорали
 #define NIGHT_LIGHT_COLOR mCOLOR(WHITE)  // по умолчанию белый
-#define NIGHT_LIGHT_BRIGHT 10  // 0 - 255 яркость ночной подсветки
+#define NIGHT_LIGHT_BRIGHT 50  // 0 - 255 яркость ночной подсветки
 #define NIGHT_PHOTO_MAX 500   // максимальное значение фоторезистора для отключения подсветки, при освещении выше этого подсветка полностью отключается
 
 #define RAILING 0      // вкл(1)/выкл(0) - подсветка перил
@@ -112,6 +112,8 @@ PirSensor endPirSensor = { -1, SENSOR_END, false};
 
 CRGBPalette16 firePalette;
 
+int8_t minStepLength = steps[0].led_amount;
+
 void setup() {
   Serial.begin(9600);
   setBrightness(curBright);    // яркость (0-255)
@@ -135,6 +137,11 @@ void setup() {
                   getFireColor(14 * 16),
                   getFireColor(15 * 16)
                 );
+  // определяем минимальную ширину ступеньки для корректной работы эффекта огня
+  FOR_i(1, STEP_AMOUNT) {
+    if (steps[i].led_amount < minStepLength)
+      minStepLength = steps[i].led_amount;
+  }
   delay(100);
   clear();
   show();
