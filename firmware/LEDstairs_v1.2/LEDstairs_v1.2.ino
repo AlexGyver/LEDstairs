@@ -56,6 +56,8 @@ int16_t NIGHT_LIGHT_BIT_MASK = 0b0100100100100100;  // последовател�
 #define RAILING 0      // вкл(1)/выкл(0) - подсветка перил
 #define RAILING_LED_AMOUNT 75    // количество чипов WS2811 на ленте перил
 
+#define BUTTON  0      // вкл(1)/выкл(0) - сенсорная кнопка переключения эффектов
+
 // пины
 // если перепутаны сенсоры - можно поменять их местами в коде! Вот тут
 #define SENSOR_START 3   // пин датчика движения
@@ -63,6 +65,7 @@ int16_t NIGHT_LIGHT_BIT_MASK = 0b0100100100100100;  // последовател�
 #define STRIP_PIN 12     // пин ленты ступенек
 #define RAILING_PIN 11   // пин ленты перил
 #define PHOTO_PIN A0     // пин фоторезистора
+#define BUTTON_PIN 6     // пин сенсорной кнопки переключения эффектов
 
 #define ORDER_BGR       // порядок цветов ORDER_GRB / ORDER_RGB / ORDER_BRG
 #define COLOR_DEBTH 2   // цветовая глубина: 1, 2, 3 (в байтах)
@@ -71,6 +74,9 @@ int16_t NIGHT_LIGHT_BIT_MASK = 0b0100100100100100;  // последовател�
 #include <microLED.h>
 #include <FastLED.h> // ФЛ для функции Noise
 
+#if (BUTTON == 1)
+#include <GyverButton.h>
+#endif
 
 // ==== удобные макросы ====
 #define FOR_i(from, to) for(int i = (from); i < (to); i++)
@@ -114,11 +120,24 @@ CRGBPalette16 firePalette;
 
 int8_t minStepLength = steps[0].led_amount;
 
+#if (BUTTON == 1)
+GButton button(BUTTON_PIN);
+#endif
+
 void setup() {
   Serial.begin(9600);
   setBrightness(curBright);    // яркость (0-255)
   clear();
-  show();
+  show();  
+  
+#if (BUTTON == 1)
+  button.setType(HIGH_PULL);
+  button.setDirection(NORM_OPEN);
+  button.setDebounce(100);     // настройка антидребезга (по умолчанию 80 мс)
+  button.setTimeout(700);      // настройка таймаута на удержание (по умолчанию 500 мс)
+  button.setClickTimeout(600); // настройка таймаута между кликами (по умолчанию 300 мс)
+#endif
+
   firePalette = CRGBPalette16(
                   getFireColor(0 * 16),
                   getFireColor(1 * 16),
@@ -148,6 +167,9 @@ void setup() {
 }
 
 void loop() {
+#if (BUTTON == 1)  
+  handleButton();
+#endif  
   handlePirSensor(&startPirSensor);
   handlePirSensor(&endPirSensor);
   if (systemIdleState || systemOffState) {
@@ -159,6 +181,17 @@ void loop() {
     handleTimeout();
   }
 }
+
+#if (BUTTON == 1)
+void handleButton()
+{
+  button.tick();
+  if (button.isClick() || button.isHolded())
+  {
+    curEffect = ++effectCounter % EFFECTS_AMOUNT;
+  }
+}
+#endif
 
 void handlePhotoResistor() {
 #if (AUTO_BRIGHT == 1)
