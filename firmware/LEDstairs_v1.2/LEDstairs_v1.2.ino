@@ -53,7 +53,7 @@ int16_t NIGHT_LIGHT_BIT_MASK = 0b0100100100100100;  // последовател�
 #define NIGHT_PHOTO_MAX 500   // максимальное значение фоторезистора для отключения подсветки, при освещении выше этого подсветка полностью отключается
 
 #define RAILING 0      // вкл(1)/выкл(0) - подсветка перил
-#define RAILING_LED_AMOUNT 75    // количество чипов WS2811 на ленте перил
+#define RAILING_LED_AMOUNT 75    // количество чипов WS2811/WS2812 на ленте перил
 
 #define BUTTON  0      // вкл(1)/выкл(0) - сенсорная кнопка переключения эффектов
 
@@ -88,13 +88,15 @@ int16_t NIGHT_LIGHT_BIT_MASK = 0b0100100100100100;  // последовател�
   if (flag)
 //===========================
 
-int railingSegmentLength = RAILING_LED_AMOUNT / STEP_AMOUNT;   // количество чипов WS2811 на сегмент ленты перил
+int railingSegmentLength = RAILING_LED_AMOUNT / STEP_AMOUNT;   // количество чипов WS2811/WS2812 на сегмент ленты перил
 
 LEDdata stripLEDs[STRIP_LED_AMOUNT];  // буфер ленты ступенек
 microLED strip(stripLEDs, STRIP_LED_AMOUNT, STRIP_PIN);  // объект лента (НЕ МАТРИЦА) из за разного количества диодов на ступеньку!
 
+#if (RAILING == 1)
 LEDdata railingLEDs[RAILING_LED_AMOUNT];  // буфер ленты перил
 microLED railing(railingLEDs, RAILING_LED_AMOUNT, RAILING_PIN);  // объект лента
+#endif
 
 int effSpeed;
 int8_t effectDirection;
@@ -170,9 +172,7 @@ void setup() {
 }
 
 void loop() {
-#if (BUTTON == 1)  
   handleButton();
-#endif  
   handlePirSensor(&startPirSensor);
   handlePirSensor(&endPirSensor);
   if (systemIdleState || systemOffState) {
@@ -185,16 +185,16 @@ void loop() {
   }
 }
 
-#if (BUTTON == 1)
 void handleButton()
 {
+#if (BUTTON == 1)
   button.tick();
   if (button.isClick() || button.isHolded())
   {
     curEffect = ++effectCounter % EFFECTS_AMOUNT;
   }
-}
 #endif
+}
 
 void handlePhotoResistor() {
 #if (AUTO_BRIGHT == 1)
