@@ -214,8 +214,6 @@ void handleNightLight() {
 }
 
 void nightLight() {
-  uint16_t nightLightBitMask;
-
   if (systemOffState) {
     clear();
     show();
@@ -225,8 +223,10 @@ void nightLight() {
   clear();
   FOR_i(0, STEP_AMOUNT) {
     // циклически сдвигаем маску, чтобы диоды не выгорали
-    nightLightBitMask = steps[i].night_mode_bitmask >> 1 | steps[i].night_mode_bitmask << 15;
-    if (nightLightBitMask > 0) fillStepWithBitMask(i, NIGHT_LIGHT_COLOR, nightLightBitMask);
+    if (steps[i].night_mode_bitmask) {
+      steps[i].night_mode_bitmask = steps[i].night_mode_bitmask >> 1 | steps[i].night_mode_bitmask << 15;
+      fillStepWithBitMask(i, NIGHT_LIGHT_COLOR, steps[i].night_mode_bitmask);
+    }
   }
   animatedSwitchOn(NIGHT_LIGHT_BRIGHT);
 }
