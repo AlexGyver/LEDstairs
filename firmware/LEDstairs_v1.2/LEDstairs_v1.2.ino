@@ -13,7 +13,7 @@
 
 struct Step {
   int8_t led_amount;
-  bool night_mode;  
+  int16_t night_mode_bitmask;  
 };
 
 #define STRIP_LED_AMOUNT 256  // кол-во светодиодов на всех ступеньках
@@ -21,22 +21,22 @@ struct Step {
 
 // описание всех ступенек с возможностью подсветки ЛЮБЫХ ступенек в ночном режиме
 Step steps[STEP_AMOUNT] = { 
-{ 16, true },    // первая ступенька 16 диодов, true - подсвечивается в ночном режиме
-{ 16, false },   // вторая ступенька 16 диодов, false - не подсвечивается в ночном режиме
-{ 16, false },   // 3
-{ 16, false },   // 4 
-{ 16, false },   // 5
-{ 16, false },   // 6
-{ 16, false },   // 7
-{ 16, false },   // 8
-{ 16, false },   // 9
-{ 16, false },   // 10
-{ 16, false },   // 11
-{ 16, false },   // 12
-{ 16, false },   // 13
-{ 16, false },   // 14
-{ 16, false },   // 15
-{ 16, true }     // 16
+{ 16, 0b0100100100100100 },   // первая ступенька 16 чипов, 0b0100100100100100 - каждый третий чип активен в ночном режиме
+{ 16, 0b0000000000000000 },   // вторая ступенька 16 чипов, 0b0000000000000000 - не активен в ночном режиме
+{ 16, 0b0000000000000000 },   // 3
+{ 16, 0b0000000000000000 },   // 4 
+{ 16, 0b0000000000000000 },   // 5
+{ 16, 0b0000000000000000 },   // 6
+{ 16, 0b0000000000000000 },   // 7
+{ 16, 0b0000000000000000 },   // 8
+{ 16, 0b0000000000000000 },   // 9
+{ 16, 0b0000000000000000 },   // 10
+{ 16, 0b0000000000000000 },   // 11
+{ 16, 0b0000000000000000 },   // 12
+{ 16, 0b0000000000000000 },   // 13
+{ 16, 0b0000000000000000 },   // 14
+{ 16, 0b0000000000000000 },   // 15
+{ 16, 0b0100100100100100 }    // 16
 };
 
 #define AUTO_BRIGHT 1     // автояркость вкл(1)/выкл(0) (с фоторезистором)
@@ -47,7 +47,6 @@ Step steps[STEP_AMOUNT] = {
 #define ROTATE_EFFECTS 1      // вкл(1)/выкл(0) - автосмена эффектов
 #define TIMEOUT 15            // секунд, таймаут выключения ступенек после срабатывания одного из датчиков движения
 
-int16_t NIGHT_LIGHT_BIT_MASK = 0b0100100100100100;  // последовательность диодов в ночном режиме, чтобы диоды не выгорали
 #define NIGHT_LIGHT_COLOR mCOLOR(WHITE)  // по умолчанию белый
 #define NIGHT_LIGHT_BRIGHT 50  // 0 - 255 яркость ночной подсветки
 #define NIGHT_PHOTO_MAX 500   // максимальное значение фоторезистора для отключения подсветки, при освещении выше этого подсветка полностью отключается
@@ -106,7 +105,6 @@ byte effectCounter;
 uint32_t timeoutCounter;
 bool systemIdleState;
 bool systemOffState;
-uint16_t nightLightBitMask = NIGHT_LIGHT_BIT_MASK;
 int steps_start[STEP_AMOUNT];
 
 struct PirSensor {
@@ -216,17 +214,19 @@ void handleNightLight() {
 }
 
 void nightLight() {
+  uint16_t nightLightBitMask;
+
   if (systemOffState) {
     clear();
     show();
     return;
   }
-  // циклически сдвигаем маску, чтобы диоды не выгорали
-  nightLightBitMask = nightLightBitMask >> 1 | nightLightBitMask << 15;
   animatedSwitchOff(NIGHT_LIGHT_BRIGHT);
   clear();
   FOR_i(0, STEP_AMOUNT) {
-    if (steps[i].night_mode) fillStepWithBitMask(i, NIGHT_LIGHT_COLOR, nightLightBitMask);
+    // циклически сдвигаем маску, чтобы диоды не выгорали
+    nightLightBitMask = steps[i].night_mode_bitmask >> 1 | steps[i].night_mode_bitmask << 15;
+    if (nightLightBitMask > 0) fillStepWithBitMask(i, NIGHT_LIGHT_COLOR, nightLightBitMask);
   }
   animatedSwitchOn(NIGHT_LIGHT_BRIGHT);
 }
