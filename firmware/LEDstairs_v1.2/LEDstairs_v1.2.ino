@@ -13,10 +13,10 @@
 
 struct Step {
   int8_t led_amount;
-  int16_t night_mode_bitmask;  
+  uint16_t night_mode_bitmask;  
 };
 
-#define STRIP_LED_AMOUNT 256  // кол-во светодиодов на всех ступеньках
+#define STRIP_LED_AMOUNT 256  // количество чипов WS2811/WS2812 на всех ступеньках. Для WS2811 кол-во чипов = кол-во светодиодов / 3
 #define STEP_AMOUNT 16        // количество ступенек
 
 // описание всех ступенек с возможностью подсветки ЛЮБЫХ ступенек в ночном режиме
@@ -24,7 +24,7 @@ Step steps[STEP_AMOUNT] = {
 { 16, 0b0100100100100100 },   // первая ступенька 16 чипов, 0b0100100100100100 - каждый третий чип активен в ночном режиме
 { 16, 0b0000000000000000 },   // вторая ступенька 16 чипов, 0b0000000000000000 - не активен в ночном режиме
 { 16, 0b0000000000000000 },   // 3
-{ 16, 0b0000000000000000 },   // 4 
+{ 16, 0b0000000000000000 },   // 4
 { 16, 0b0000000000000000 },   // 5
 { 16, 0b0000000000000000 },   // 6
 { 16, 0b0000000000000000 },   // 7
@@ -90,7 +90,7 @@ Step steps[STEP_AMOUNT] = {
 int railingSegmentLength = RAILING_LED_AMOUNT / STEP_AMOUNT;   // количество чипов WS2811/WS2812 на сегмент ленты перил
 
 LEDdata stripLEDs[STRIP_LED_AMOUNT];  // буфер ленты ступенек
-microLED strip(stripLEDs, STRIP_LED_AMOUNT, STRIP_PIN);  // объект лента (НЕ МАТРИЦА) из за разного количества диодов на ступеньку!
+microLED strip(stripLEDs, STRIP_LED_AMOUNT, STRIP_PIN);  // объект лента (НЕ МАТРИЦА) из-за разного количества диодов на ступеньку!
 
 #if (RAILING == 1)
 LEDdata railingLEDs[RAILING_LED_AMOUNT];  // буфер ленты перил
@@ -183,8 +183,7 @@ void loop() {
   }
 }
 
-void handleButton()
-{
+void handleButton() {
 #if (BUTTON == 1)
   button.tick();
   if (button.isClick() || button.isHolded())
@@ -215,6 +214,7 @@ void handleNightLight() {
 
 void nightLight() {
   if (systemOffState) {
+    Serial.println("System OFF ");
     clear();
     show();
     return;
@@ -224,7 +224,7 @@ void nightLight() {
   FOR_i(0, STEP_AMOUNT) {
     // циклически сдвигаем маску, чтобы диоды не выгорали
     if (steps[i].night_mode_bitmask) {
-      steps[i].night_mode_bitmask = steps[i].night_mode_bitmask >> 1 | steps[i].night_mode_bitmask << 15;
+      steps[i].night_mode_bitmask = (uint16_t) steps[i].night_mode_bitmask >> 1 | steps[i].night_mode_bitmask << 15;
       fillStepWithBitMask(i, NIGHT_LIGHT_COLOR, steps[i].night_mode_bitmask);
     }
   }
@@ -248,6 +248,8 @@ void handlePirSensor(PirSensor *sensor) {
 
   int newState = digitalRead(sensor->pin);
   if (newState && !sensor->lastState) {
+    Serial.print("PIR sensor ");
+    Serial.println(sensor->pin);
     timeoutCounter = millis(); // при срабатывании датчика устанавливаем заново timeout
     if (systemIdleState) {
       effectDirection = sensor->effectDirection;
