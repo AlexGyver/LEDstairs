@@ -83,9 +83,14 @@ void stepFader(bool dir, bool state) {
 void fireStairs(int8_t dir, byte from, byte to) {
   effSpeed = 30;
   static uint16_t counter = 0;
-  FOR_i(0, STEP_LENGTH) {
+  int start_led_index = 0;
+
+  FOR_i(0, minStepLength) {
+    start_led_index = 0;
     FOR_j(0, STEP_AMOUNT) {
-      strip.setPix(i, j, mHEX(getPixColor(ColorFromPalette(
+      if (j > 0) start_led_index += steps[j-1].led_amount;
+      // из за разных длин ступенек теперь это не матрица, а лента
+      strip.setLED(start_led_index + i, mHEX(getPixColor(ColorFromPalette(
                                             firePalette,
                                             (inoise8(i * FIRE_STEP, j * FIRE_STEP, counter)),
                                             255,
@@ -150,7 +155,7 @@ void rainbowStripes(int8_t dir, byte from, byte to) {
 // ========= залить ступеньку цветом (служебное)
 void fillStep(int8_t num, LEDdata color) {
   if (num >= STEP_AMOUNT || num < 0) return;
-  FOR_i(num * STEP_LENGTH, num * STEP_LENGTH + STEP_LENGTH) {
+  for(int i = steps_start[num]; i < steps_start[num] + steps[num].led_amount; i++) {
     stripLEDs[i] = color;
   }
 #if (RAILING == 1)
@@ -162,8 +167,8 @@ void fillStep(int8_t num, LEDdata color) {
 
 void fillStepWithBitMask(int8_t num, LEDdata color, uint32_t bitMask) {
   if (num >= STEP_AMOUNT || num < 0) return;
-  FOR_i(num * STEP_LENGTH, num * STEP_LENGTH + STEP_LENGTH) {
-    if (bitRead(bitMask, i % STEP_LENGTH) % 16) {
+  for(int i = steps_start[num]; i < steps_start[num] + steps[num].led_amount; i++) {
+    if (bitRead(bitMask, (i - steps_start[num]) % 16)) {
       stripLEDs[i] = color;
     }
   }
